@@ -1,0 +1,20 @@
+# Root-level .htaccess for Apache setups where document root is not /public
+# Forwards all requests to public/index.php unless the file/folder exists
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+
+    # Serve static assets in /public directly (including nested folders)
+    RewriteCond %{REQUEST_URI} ^/(css|js|images|fonts|build|storage|favicon\.ico|robots\.txt)(/.*)?$ [NC]
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+    RewriteRule ^(css|js|images|fonts|build|storage|favicon\.ico|robots\.txt)(/.*)?$ public%{REQUEST_URI} [L]
+
+    # If the request is for an existing file or directory, serve it directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Otherwise, forward to public/index.php
+    RewriteRule ^ public/index.php [L]
+</IfModule>

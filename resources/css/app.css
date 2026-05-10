@@ -1,0 +1,162 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+@source '../**/*.vue';
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+:root {
+    --app-surface-panel: #ffffff;
+    --app-surface-raised: #f8fafc;
+    --app-surface-elevated: #ffffff;
+    --app-surface-inset: #f1f5f9;
+    --app-border-soft: #e2e8f0;
+    --app-border-strong: #cbd5e1;
+    --app-text: #0f172a;
+    --app-text-muted: #475569;
+    --app-text-subtle: #64748b;
+    --app-shadow-panel: 0 20px 25px -10px rgba(15, 23, 42, 0.12), 0 10px 14px -10px rgba(15, 23, 42, 0.1);
+    --app-shadow-raised: 0 24px 38px -20px rgba(15, 23, 42, 0.16), 0 14px 20px -18px rgba(15, 23, 42, 0.12);
+}
+
+html.dark {
+    --app-surface-panel: rgb(24 24 27);
+    --app-surface-raised: rgb(39 39 42);
+    --app-surface-elevated: rgb(50 50 56);
+    --app-surface-inset: rgb(20 20 23);
+    --app-border-soft: rgba(255, 255, 255, 0.08);
+    --app-border-strong: rgba(255, 255, 255, 0.12);
+    --app-text: rgb(244 244 245);
+    --app-text-muted: rgb(212 212 216);
+    --app-text-subtle: rgb(161 161 170);
+    --app-shadow-panel: 0 24px 38px -18px rgba(0, 0, 0, 0.65), 0 14px 20px -16px rgba(0, 0, 0, 0.5);
+    --app-shadow-raised: 0 28px 42px -24px rgba(0, 0, 0, 0.72), 0 16px 24px -18px rgba(0, 0, 0, 0.56);
+}
+
+/* Hide scrollbar on the nav strip while keeping scroll behaviour */
+.scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+    display: none;
+}
+
+.app-surface-panel {
+    background-color: var(--app-surface-panel);
+    border-color: var(--app-border-soft);
+    color: var(--app-text);
+    box-shadow: var(--app-shadow-panel);
+}
+
+.app-surface-raised {
+    background-color: var(--app-surface-raised);
+    border-color: var(--app-border-soft);
+    color: var(--app-text);
+    box-shadow: var(--app-shadow-raised);
+}
+
+.app-surface-elevated {
+    background-color: var(--app-surface-elevated);
+    border-color: var(--app-border-soft);
+    color: var(--app-text-muted);
+}
+
+.app-surface-inset {
+    background-color: var(--app-surface-inset);
+    border-color: var(--app-border-soft);
+    color: var(--app-text);
+}
+
+.lead-board-banner,
+.lead-board-control,
+.lead-board-column {
+    border-color: var(--app-border-soft);
+    background-color: var(--app-surface-panel);
+    color: var(--app-text);
+    box-shadow: var(--app-shadow-panel);
+}
+
+.lead-board-switch-action {
+    color: var(--app-text-subtle);
+}
+
+.lead-board-switch-action:hover {
+    background-color: var(--app-surface-raised);
+    color: var(--app-text);
+}
+
+.lead-board-switch-active {
+    background-color: var(--app-surface-raised);
+    color: var(--app-text);
+    box-shadow: var(--app-shadow-raised);
+}
+
+.lead-board-card {
+    border-color: var(--app-border-soft);
+    background-color: var(--app-surface-raised);
+    color: var(--app-text);
+    box-shadow: var(--app-shadow-raised);
+}
+
+.lead-board-pill {
+    border-color: var(--app-border-soft);
+    background-color: var(--app-surface-elevated);
+    color: var(--app-text-muted);
+}
+
+.lead-board-column {
+    scroll-behavior: smooth;
+}
+
+.lead-board-card,
+.lead-board-column [data-lead-list] {
+    touch-action: pan-y;
+}
+
+.lead-board-sortable-chosen {
+    cursor: grabbing;
+    opacity: 0.94;
+    transform: scale(1.015);
+    box-shadow: 0 28px 48px -20px rgba(15, 23, 42, 0.28), 0 22px 28px -24px rgba(15, 23, 42, 0.24);
+}
+
+html.dark .lead-board-sortable-chosen {
+    box-shadow: 0 30px 52px -22px rgba(0, 0, 0, 0.72), 0 22px 30px -24px rgba(0, 0, 0, 0.6);
+}
+
+.lead-board-sortable-drag {
+    z-index: 60;
+    cursor: grabbing;
+    rotate: 1deg;
+    transition: none;
+}
+
+.lead-board-sortable-ghost {
+    opacity: 0.3;
+    border-style: dashed;
+    background-color: color-mix(in srgb, var(--app-surface-raised) 70%, transparent);
+    box-shadow: none;
+}
+
+.sortable-fallback.lead-board-card,
+.lead-board-sortable-drag.sortable-fallback {
+    pointer-events: none;
+    opacity: 0.98;
+    transform: scale(1.02);
+    box-shadow: 0 34px 54px -24px rgba(15, 23, 42, 0.3), 0 24px 34px -26px rgba(15, 23, 42, 0.22);
+}
+
+html.dark .sortable-fallback.lead-board-card,
+html.dark .lead-board-sortable-drag.sortable-fallback {
+    box-shadow: 0 34px 58px -24px rgba(0, 0, 0, 0.78), 0 24px 34px -24px rgba(0, 0, 0, 0.62);
+}
+
