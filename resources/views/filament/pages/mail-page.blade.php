@@ -2,7 +2,7 @@
 	@php($metrics = $this->getMailMetrics())
 
 	<div class="space-y-6">
-		<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+		<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 			<x-filament::section>
 				<x-slot name="heading">Reachable Contacts</x-slot>
 				<p class="text-3xl font-semibold text-gray-900">{{ number_format($metrics['contacts_with_email']) }}</p>
@@ -13,12 +13,6 @@
 				<x-slot name="heading">Open Follow-Ups</x-slot>
 				<p class="text-3xl font-semibold text-gray-900">{{ number_format($metrics['lead_follow_ups']) }}</p>
 				<p class="text-sm text-gray-600">Leads still in play with a scheduled follow-up touchpoint.</p>
-			</x-filament::section>
-
-			<x-filament::section>
-				<x-slot name="heading">Email Activities</x-slot>
-				<p class="text-3xl font-semibold text-gray-900">{{ number_format($metrics['email_activities']) }}</p>
-				<p class="text-sm text-gray-600">Activity records already tagged as email work.</p>
 			</x-filament::section>
 
 			<x-filament::section>

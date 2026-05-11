@@ -13,6 +13,7 @@
         "laravel/horizon": "^5.46",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
+        "saade/filament-fullcalendar": "^3.2",
         "spatie/laravel-medialibrary": "^11.22",
         "spatie/laravel-permission": "^7.4",
         "spatie/laravel-query-builder": "^7.2"

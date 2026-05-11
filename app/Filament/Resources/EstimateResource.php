@@ -16,7 +16,7 @@ class EstimateResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
 
-    protected static ?string $navigationGroup = 'Accounting';
+    protected static ?string $navigationGroup = 'Operations';
 
     protected static ?string $navigationLabel = 'Estimates';
 

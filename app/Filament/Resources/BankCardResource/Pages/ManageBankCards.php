@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\ActivityResource\Pages;
+namespace App\Filament\Resources\BankCardResource\Pages;
 
+use App\Filament\Resources\BankCardResource;
 use App\Filament\Resources\Pages\AppLabManageRecords;
-use App\Filament\Resources\ActivityResource;
 use Filament\Actions;
 
-class ManageActivities extends AppLabManageRecords
+class ManageBankCards extends AppLabManageRecords
 {
-    protected static string $resource = ActivityResource::class;
+    protected static string $resource = BankCardResource::class;
 
     protected function getHeaderActions(): array
     {

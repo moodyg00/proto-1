@@ -4,10 +4,15 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ChartOfAccountResource\Pages;
 use App\Models\ChartOfAccount;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Table;
 
 class ChartOfAccountResource extends Resource
@@ -52,13 +57,37 @@ class ChartOfAccountResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid([
+                'md' => 1,
+                'xl' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('code')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('type')->badge()->sortable(),
-                Tables\Columns\IconColumn::make('is_active')->boolean(),
-                Tables\Columns\TextColumn::make('description')->limit(40)->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Split::make([
+                    Stack::make([
+                        Tables\Columns\TextColumn::make('name')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(FontWeight::Bold)
+                            ->description(fn (ChartOfAccount $record): ?string => $record->description ?: null),
+                        Tables\Columns\TextColumn::make('code')
+                            ->searchable()
+                            ->badge()
+                            ->color('gray'),
+                        Tables\Columns\TextColumn::make('type')
+                            ->badge()
+                            ->sortable(),
+                    ]),
+                    Stack::make([
+                        Tables\Columns\TextColumn::make('account_value')
+                            ->label('Value')
+                            ->state(fn (ChartOfAccount $record): float => static::normalizeAccountValue($record))
+                            ->money('USD')
+                            ->weight(FontWeight::Bold),
+                        Tables\Columns\IconColumn::make('is_active')
+                            ->label('Active')
+                            ->boolean(),
+                    ]),
+                ]),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
@@ -80,6 +109,29 @@ class ChartOfAccountResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->select('chart_of_accounts.*')
+            ->selectSub(
+                DB::table('journal_entry_lines')
+                    ->selectRaw('COALESCE(SUM(debit - credit), 0)')
+                    ->whereColumn('journal_entry_lines.account_id', 'chart_of_accounts.id'),
+                'balance_delta',
+            );
+    }
+
+    protected static function normalizeAccountValue(ChartOfAccount $record): float
+    {
+        $delta = (float) ($record->balance_delta ?? 0);
+
+        $normalized = in_array($record->type, ['liability', 'equity', 'income'], true)
+            ? $delta * -1
+            : $delta;
+
+        return abs($normalized) < 0.00001 ? 0.0 : $normalized;
     }
 
     public static function getPages(): array

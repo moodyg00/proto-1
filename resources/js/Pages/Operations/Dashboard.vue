@@ -2,6 +2,10 @@
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
+const adminJobsUrl = '/admin/jobs?view_type=table';
+
+const adminJobSearchUrl = (workOrderNumber) => `/admin/jobs?view_type=table&tableSearch=${encodeURIComponent(workOrderNumber)}`;
+
 defineProps({
   stats: Object,
   workOrders: Array,
@@ -27,13 +31,13 @@ defineProps({
         <div class="rounded-xl bg-white p-4 shadow-sm">
           <div class="mb-3 flex items-center justify-between">
             <h3 class="font-semibold text-slate-900">Work Orders</h3>
-            <Link href="/operations/work-orders" class="text-sm text-blue-600">View all</Link>
+            <Link :href="adminJobsUrl" class="text-sm text-blue-600">View all</Link>
           </div>
           <div class="space-y-2">
             <Link
               v-for="workOrder in workOrders"
               :key="workOrder.id"
-              :href="`/operations/work-orders/${workOrder.id}`"
+              :href="adminJobSearchUrl(workOrder.work_order_number)"
               class="block rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
             >
               <p class="text-sm font-medium">{{ workOrder.work_order_number }} · {{ workOrder.customer_name }}</p>

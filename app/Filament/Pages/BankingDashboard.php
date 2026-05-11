@@ -10,7 +10,7 @@ class BankingDashboard extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-home';
 
-    protected static ?string $navigationGroup = 'Accounting';
+    protected static ?string $navigationGroup = 'Banking';
 
     protected static ?string $navigationLabel = 'Dashboard';
 

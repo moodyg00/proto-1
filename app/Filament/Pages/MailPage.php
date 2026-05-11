@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Activity;
 use App\Models\Contact;
 use App\Models\Lead;
 use App\Models\Setting;
@@ -29,7 +28,6 @@ class MailPage extends Page
                 ->whereNotNull('next_follow_up')
                 ->whereNotIn('status', ['converted', 'lost'])
                 ->count(),
-            'email_activities' => $this->countIfTableExists('activities', fn (): int => Activity::query()->where('type', 'like', '%email%')->count()),
             'mail_settings' => $this->countIfTableExists('settings', fn (): int => Setting::query()
                 ->where('module', 'crm')
                 ->where('key', 'like', '%mail%')

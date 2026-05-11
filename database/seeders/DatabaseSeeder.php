@@ -28,7 +28,9 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        $this->call(ChartOfAccountsSeeder::class);
         $this->call(SampleLeadsSeeder::class);
         $this->call(SampleWorkOrdersSeeder::class);
+        $this->call(ComprehensiveDemoSeeder::class);
     }
 }

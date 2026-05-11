@@ -4,8 +4,10 @@ namespace App\Filament\Resources\JobResource\Pages;
 
 use App\Filament\Resources\Pages\AppLabManageRecords;
 use App\Filament\Resources\JobResource;
+use App\Models\Booking;
 use App\Models\Job;
 use Filament\Actions;
+use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\Support\Htmlable;
@@ -17,15 +19,6 @@ class ManageJobs extends AppLabManageRecords
     protected static string $resource = JobResource::class;
 
     protected static string $view = 'filament.resources.job-resource.pages.manage-jobs';
-
-    public string $viewType = 'kanban';
-
-    public function mount(): void
-    {
-        $this->viewType = request()->query('view_type') === 'table' ? 'table' : 'kanban';
-
-        parent::mount();
-    }
 
     public function getHeading(): string | Htmlable
     {
@@ -73,8 +66,6 @@ class ManageJobs extends AppLabManageRecords
                     'contractor_status' => $job->contractor_status,
                     'status' => Job::normalizeStatus($job->status),
                     'scheduled_date' => $job->scheduled_date,
-                    'booking_date' => $job->booking_date,
-                    'booking_time' => $job->booking_time,
                     'address' => $job->address,
                     'special_instructions' => $job->special_instructions,
                     'notes' => $job->notes,
@@ -83,6 +74,11 @@ class ManageJobs extends AppLabManageRecords
             ->form(fn (Form $form): array => JobResource::form($form)->getComponents())
             ->action(function (array $data, array $arguments): void {
                 $job = Job::query()->findOrFail($arguments['job'] ?? null);
+
+                if ($job->booking()->exists()) {
+                    unset($data['scheduled_date']);
+                    unset($data['booking_time']);
+                }
 
                 $job->fill($data);
                 $job->status = Job::normalizeStatus($job->status);
@@ -100,6 +96,67 @@ class ManageJobs extends AppLabManageRecords
 
                 Notification::make()
                     ->title('Work order updated')
+                    ->success()
+                    ->send();
+
+                $this->resetTable();
+            });
+    }
+
+    public function editBookingAction(): Actions\Action
+    {
+        return Actions\Action::make('editBooking')
+            ->modalHeading(fn (array $arguments): string => Job::query()->findOrFail($arguments['job'] ?? null)->booking()->exists() ? 'Edit Booking' : 'Create Booking')
+            ->modalSubmitActionLabel('Save booking')
+            ->fillForm(function (array $arguments): array {
+                $job = Job::query()->findOrFail($arguments['job'] ?? null);
+                $booking = $job->booking()->first();
+
+                return [
+                    'booking_date' => optional($booking?->booking_date)->toDateString() ?: optional($job->scheduled_date)?->toDateString(),
+                    'start_time' => optional($booking?->start_time)->format('H:i') ?: optional($job->booking_time)->format('H:i'),
+                    'end_time' => optional($booking?->end_time)->format('H:i'),
+                    'notes' => $booking?->notes,
+                ];
+            })
+            ->form([
+                Forms\Components\DatePicker::make('booking_date')
+                    ->label('Booking Date')
+                    ->required(),
+                Forms\Components\TimePicker::make('start_time')
+                    ->label('Start Time')
+                    ->seconds(false),
+                Forms\Components\TimePicker::make('end_time')
+                    ->label('End Time')
+                    ->seconds(false),
+                Forms\Components\Textarea::make('notes')
+                    ->rows(3),
+            ])
+            ->action(function (array $data, array $arguments): void {
+                $job = Job::query()->findOrFail($arguments['job'] ?? null);
+
+                $booking = Booking::query()->updateOrCreate(
+                    ['work_order_id' => $job->getKey()],
+                    [
+                        'booking_date' => $data['booking_date'],
+                        'start_time' => $data['start_time'] ?: null,
+                        'end_time' => $data['end_time'] ?: null,
+                        'address' => $job->address,
+                        'notes' => $data['notes'] ?: null,
+                        'updated_by' => Auth::id(),
+                        'created_by' => Auth::id(),
+                    ],
+                );
+
+                $job->forceFill([
+                    'scheduled_date' => $booking->booking_date,
+                    'booking_time' => $booking->start_time,
+                    'status' => Job::normalizeStatus($job->status) === 'new' ? 'scheduled' : $job->status,
+                    'updated_by' => Auth::id(),
+                ])->save();
+
+                Notification::make()
+                    ->title('Booking saved')
                     ->success()
                     ->send();
 
@@ -135,7 +192,17 @@ class ManageJobs extends AppLabManageRecords
 
     public function isTableView(): bool
     {
-        return $this->viewType === 'table';
+        return $this->isListView();
+    }
+
+    protected function hasKanbanView(): bool
+    {
+        return true;
+    }
+
+    protected function getDefaultViewType(): string
+    {
+        return 'kanban';
     }
 
     public function getWorkOrderKanbanColumns(): array

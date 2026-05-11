@@ -14,7 +14,8 @@ class ManageChartOfAccounts extends AppLabManageRecords
     {
         return [
             ...parent::getHeaderActions(),
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Add Account'),
         ];
     }
 }

@@ -5,8 +5,9 @@
     ])
 >
     @php
-        $tableUrl = \App\Filament\Resources\JobResource::getUrl('index', ['view_type' => 'table']);
-        $kanbanUrl = \App\Filament\Resources\JobResource::getUrl('index');
+        $listUrl = $this->getViewTypeUrl('list');
+        $cardUrl = $this->getViewTypeUrl('card');
+        $kanbanUrl = $this->getViewTypeUrl('kanban');
     @endphp
 
     <div class="flex flex-col gap-y-6">
@@ -27,34 +28,108 @@
 
         <div class="hidden">
             {{ $this->editWorkOrderAction }}
+            {{ $this->editBookingAction }}
         </div>
 
         <div class="flex items-center justify-end gap-3 max-md:w-full max-md:justify-between">
             <div class="app-surface-panel lead-board-control flex items-center gap-1 rounded-xl border p-1 shadow-sm">
-                @if ($this->isTableView())
-                    <a href="{{ $kanbanUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Kanban view">
-                        <x-filament::icon icon="heroicon-m-view-columns" class="h-5 w-5" />
-                    </a>
-
-                    <span class="app-surface-raised lead-board-switch-active rounded-lg p-2 shadow-sm" aria-label="Table view active">
-                        <x-filament::icon icon="heroicon-m-list-bullet" class="h-5 w-5" />
-                    </span>
-                @else
+                @if ($this->isKanbanView())
                     <span class="app-surface-raised lead-board-switch-active rounded-lg p-2 shadow-sm" aria-label="Kanban view active">
                         <x-filament::icon icon="heroicon-m-view-columns" class="h-5 w-5" />
                     </span>
 
-                    <a href="{{ $tableUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Table view">
+                    <a href="{{ $cardUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Card view">
+                        <x-filament::icon icon="heroicon-m-squares-2x2" class="h-5 w-5" />
+                    </a>
+
+                    <a href="{{ $listUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="List view">
                         <x-filament::icon icon="heroicon-m-list-bullet" class="h-5 w-5" />
                     </a>
+                @elseif ($this->isCardView())
+                    <a href="{{ $kanbanUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Kanban view">
+                        <x-filament::icon icon="heroicon-m-view-columns" class="h-5 w-5" />
+                    </a>
+
+                    <span class="app-surface-raised lead-board-switch-active rounded-lg p-2 shadow-sm" aria-label="Card view active">
+                        <x-filament::icon icon="heroicon-m-squares-2x2" class="h-5 w-5" />
+                    </span>
+
+                    <a href="{{ $listUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="List view">
+                        <x-filament::icon icon="heroicon-m-list-bullet" class="h-5 w-5" />
+                    </a>
+                @else
+                    <a href="{{ $kanbanUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Kanban view">
+                        <x-filament::icon icon="heroicon-m-view-columns" class="h-5 w-5" />
+                    </a>
+
+                    <a href="{{ $cardUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Card view">
+                        <x-filament::icon icon="heroicon-m-squares-2x2" class="h-5 w-5" />
+                    </a>
+
+                        <span class="app-surface-raised lead-board-switch-active rounded-lg p-2 shadow-sm" aria-label="List view active">
+                        <x-filament::icon icon="heroicon-m-list-bullet" class="h-5 w-5" />
+                    </span>
                 @endif
             </div>
         </div>
 
-        @if ($this->isTableView())
+        @if (! $this->isKanbanView())
             {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE, scopes: $this->getRenderHookScopes()) }}
 
-            {{ $this->table }}
+            @if ($this->isCardView())
+                @include('filament.resources.pages.partials.record-view-toolbar')
+
+                <div hidden aria-hidden="true">
+                    {{ $this->table }}
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                    @foreach ($this->getCardViewItems() as $job)
+                        <a
+                            wire:key="job-card-view-{{ $job->getKey() }}"
+                            href="#"
+                            x-on:click.prevent="$wire.mountAction('editWorkOrder', { job: '{{ $job->getKey() }}' })"
+                            class="app-surface-raised lead-board-card flex flex-col gap-5 rounded-xl border p-4 transition"
+                        >
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <div class="text-sm font-semibold leading-5 text-slate-900 dark:text-slate-100">{{ $job->work_order_number }}</div>
+                                    <div class="mt-1 text-xs leading-4 text-slate-500 dark:text-slate-400">{{ $job->customer_name ?: 'Unknown customer' }}</div>
+                                </div>
+
+                                <div class="app-surface-elevated lead-board-pill inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium">
+                                    {{ \App\Models\Job::statusOptions()[\App\Models\Job::normalizeStatus($job->status)] ?? str($job->status)->headline()->toString() }}
+                                </div>
+                            </div>
+
+                            <p class="text-sm font-medium leading-6 text-slate-800 dark:text-slate-100">{{ $job->service_name ?: 'Unscheduled service' }}</p>
+
+                            <div class="flex flex-wrap gap-1.5">
+                                @foreach ($this->getJobCardPills($job) as $pill)
+                                    <div class="app-surface-elevated lead-board-pill inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs font-medium">
+                                        @if ($pill['icon'])
+                                            <x-filament::icon :icon="$pill['icon']" class="h-3.5 w-3.5" />
+                                        @endif
+
+                                        <span>{{ $pill['label'] }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="flex items-center justify-end">
+                                {{ ($this->editBookingAction)(['job' => $job->getKey()])
+                                    ->label($job->booking()->exists() ? 'Edit Booking' : 'Create Booking')
+                                    ->size(
+                                        \Filament\Support\Enums\ActionSize::Small,
+                                    )
+                                    ->color('gray') }}
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            @else
+                {{ $this->table }}
+            @endif
 
             {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_AFTER, scopes: $this->getRenderHookScopes()) }}
         @else
@@ -173,6 +248,15 @@
                                                 <span>{{ $pill['label'] }}</span>
                                             </div>
                                         @endforeach
+                                    </div>
+
+                                    <div class="flex items-center justify-end">
+                                        {{ ($this->editBookingAction)(['job' => $job->getKey()])
+                                            ->label($job->booking()->exists() ? 'Edit Booking' : 'Create Booking')
+                                            ->size(
+                                                \Filament\Support\Enums\ActionSize::Small,
+                                            )
+                                            ->color('gray') }}
                                     </div>
                                 </a>
                             @empty

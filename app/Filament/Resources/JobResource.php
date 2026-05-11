@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\JobResource\Pages;
+use App\Models\Booking;
 use App\Models\Job;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -65,9 +66,11 @@ class JobResource extends Resource
                     ->options(Job::statusOptions())
                     ->default('scheduled')
                     ->required(),
-                Forms\Components\DatePicker::make('scheduled_date'),
-                Forms\Components\DatePicker::make('booking_date'),
-                Forms\Components\TimePicker::make('booking_time')->seconds(false),
+                Forms\Components\DatePicker::make('scheduled_date')
+                    ->disabled(fn (?Job $record): bool => $record?->booking()->exists() ?? false)
+                    ->helperText(fn (?Job $record): ?string => ($record?->booking()->exists() ?? false)
+                        ? 'Schedule date and time are owned by the booking record. Use Edit Booking.'
+                        : null),
                 Forms\Components\KeyValue::make('address')->columnSpanFull(),
                 Forms\Components\Textarea::make('special_instructions')
                     ->rows(3)
@@ -87,7 +90,6 @@ class JobResource extends Resource
                 Tables\Columns\TextColumn::make('contractor_status')->badge()->sortable()->toggleable(),
                 Tables\Columns\TextColumn::make('status')->badge()->sortable(),
                 Tables\Columns\TextColumn::make('scheduled_date')->date()->sortable(),
-                Tables\Columns\TextColumn::make('booking_date')->date()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('completed_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
@@ -101,6 +103,55 @@ class JobResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('editBooking')
+                    ->label(fn (Job $record): string => $record->booking()->exists() ? 'Edit Booking' : 'Create Booking')
+                    ->icon('heroicon-o-calendar-days')
+                    ->color('gray')
+                    ->fillForm(function (Job $record): array {
+                        $booking = $record->booking()->first();
+
+                        return [
+                            'booking_date' => optional($booking?->booking_date)->toDateString() ?: optional($record->scheduled_date)?->toDateString(),
+                            'start_time' => optional($booking?->start_time)->format('H:i') ?: optional($record->booking_time)->format('H:i'),
+                            'end_time' => optional($booking?->end_time)->format('H:i'),
+                            'notes' => $booking?->notes,
+                        ];
+                    })
+                    ->form([
+                        Forms\Components\DatePicker::make('booking_date')
+                            ->label('Booking Date')
+                            ->required(),
+                        Forms\Components\TimePicker::make('start_time')
+                            ->label('Start Time')
+                            ->seconds(false),
+                        Forms\Components\TimePicker::make('end_time')
+                            ->label('End Time')
+                            ->seconds(false),
+                        Forms\Components\Textarea::make('notes')
+                            ->rows(3),
+                    ])
+                    ->action(function (Job $record, array $data): void {
+                        $booking = Booking::query()->updateOrCreate(
+                            ['work_order_id' => $record->getKey()],
+                            [
+                                'booking_date' => $data['booking_date'],
+                                'start_time' => $data['start_time'] ?: null,
+                                'end_time' => $data['end_time'] ?: null,
+                                'address' => $record->address,
+                                'notes' => $data['notes'] ?: null,
+                                'updated_by' => auth()->id(),
+                                'created_by' => auth()->id(),
+                            ],
+                        );
+
+                        $record->forceFill([
+                            'scheduled_date' => $booking->booking_date,
+                            'booking_time' => $booking->start_time,
+                            'status' => Job::normalizeStatus($record->status) === 'new' ? 'scheduled' : $record->status,
+                            'updated_by' => auth()->id(),
+                        ])->save();
+                    })
+                    ->successNotificationTitle('Booking saved'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

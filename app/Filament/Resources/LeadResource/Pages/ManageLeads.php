@@ -51,8 +51,6 @@ class ManageLeads extends AppLabManageRecords
         ],
     ];
 
-    public string $viewType = 'kanban';
-
     public string $pipelineId = 'default';
 
     public ?string $pendingLeadId = null;
@@ -67,7 +65,6 @@ class ManageLeads extends AppLabManageRecords
 
     public function mount(): void
     {
-        $this->viewType = request()->query('view_type') === 'table' ? 'table' : 'kanban';
         $this->pipelineId = (string) request()->query('pipeline_id', 'default');
 
         parent::mount();
@@ -165,7 +162,24 @@ class ManageLeads extends AppLabManageRecords
 
     public function isTableView(): bool
     {
-        return $this->viewType === 'table';
+        return $this->isListView();
+    }
+
+    protected function hasKanbanView(): bool
+    {
+        return true;
+    }
+
+    protected function getDefaultViewType(): string
+    {
+        return 'kanban';
+    }
+
+    protected function getAdditionalViewTypeQueryParameters(): array
+    {
+        return [
+            'pipeline_id' => $this->pipelineId,
+        ];
     }
 
     public function getLeadPipelines(): array

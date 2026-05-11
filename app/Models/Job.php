@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Model;
 
 class Job extends Model
@@ -57,7 +58,6 @@ class Job extends Model
             'address' => 'array',
             'notes' => 'array',
             'scheduled_date' => 'date',
-            'booking_date' => 'date',
             'booking_time' => 'datetime:H:i:s',
             'completed_at' => 'datetime',
             'created_at' => 'datetime',
@@ -78,5 +78,10 @@ class Job extends Model
     public static function normalizeStatus(?string $status): string
     {
         return $status === 'assigned' ? 'scheduled' : ($status ?: 'new');
+    }
+
+    public function booking(): HasOne
+    {
+        return $this->hasOne(Booking::class, 'work_order_id');
     }
 }

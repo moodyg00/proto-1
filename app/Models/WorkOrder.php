@@ -17,7 +17,6 @@ class WorkOrder extends Model
             'address' => 'array',
             'notes' => 'array',
             'scheduled_date' => 'date',
-            'booking_date' => 'date',
             'booking_time' => 'datetime:H:i:s',
             'completed_at' => 'datetime',
             'created_at' => 'datetime',

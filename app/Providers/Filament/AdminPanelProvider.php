@@ -19,6 +19,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -32,6 +33,12 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->plugin(
+                FilamentFullCalendarPlugin::make()
+                    ->selectable()
+                    ->timezone(config('app.timezone'))
+                    ->locale(app()->getLocale()),
+            )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn (): View => view('filament.partials.surface-theme'),
@@ -40,8 +47,9 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->navigationGroups([
                 NavigationGroup::make()->label('Operations'),
-                NavigationGroup::make()->label('Accounting'),
                 NavigationGroup::make()->label('Customer Relations'),
+                NavigationGroup::make()->label('Accounting'),
+                NavigationGroup::make()->label('Banking'),
                 NavigationGroup::make()->label('Marketing & Ads'),
                 NavigationGroup::make()->label('Content & Blog'),
                 NavigationGroup::make()->label('AI Tools'),

@@ -18,9 +18,9 @@ class JournalEntryResource extends Resource
 
     protected static ?string $navigationGroup = 'Accounting';
 
-    protected static ?string $navigationLabel = 'Transactions';
+    protected static ?string $navigationLabel = 'Journal Entry';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {

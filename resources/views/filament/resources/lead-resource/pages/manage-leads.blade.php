@@ -6,13 +6,9 @@
 >
     @php
         $activePipeline = $this->getActiveLeadPipeline();
-        $tableUrl = \App\Filament\Resources\LeadResource::getUrl('index', [
-            'pipeline_id' => $activePipeline['id'],
-            'view_type' => 'table',
-        ]);
-        $kanbanUrl = \App\Filament\Resources\LeadResource::getUrl('index', [
-            'pipeline_id' => $activePipeline['id'],
-        ]);
+        $listUrl = $this->getViewTypeUrl('list');
+        $cardUrl = $this->getViewTypeUrl('card');
+        $kanbanUrl = $this->getViewTypeUrl('kanban');
         $pipelineTotalValue = max($this->getLeadPipelineTotalValue(), 1);
     @endphp
 
@@ -153,7 +149,7 @@
                     <x-filament::dropdown.list>
                         @foreach ($this->getLeadPipelines() as $pipeline)
                             <x-filament::dropdown.list.item
-                                :href="\App\Filament\Resources\LeadResource::getUrl('index', ['pipeline_id' => $pipeline['id'], 'view_type' => $this->isTableView() ? 'table' : null])"
+                                :href="$this->getViewTypeUrl($this->viewType ?? 'kanban', ['pipeline_id' => $pipeline['id']])"
                             >
                                 {{ $pipeline['name'] }}
                             </x-filament::dropdown.list.item>
@@ -162,31 +158,100 @@
                 </x-filament::dropdown>
 
                 <div class="app-surface-panel lead-board-control flex items-center gap-1 rounded-xl border p-1 shadow-sm">
-                    @if ($this->isTableView())
-                        <a href="{{ $kanbanUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Kanban view">
-                            <x-filament::icon icon="heroicon-m-view-columns" class="h-5 w-5" />
-                        </a>
-
-                        <span class="app-surface-raised lead-board-switch-active rounded-lg p-2 shadow-sm" aria-label="Table view active">
-                            <x-filament::icon icon="heroicon-m-list-bullet" class="h-5 w-5" />
-                        </span>
-                    @else
+                    @if ($this->isKanbanView())
                         <span class="app-surface-raised lead-board-switch-active rounded-lg p-2 shadow-sm" aria-label="Kanban view active">
                             <x-filament::icon icon="heroicon-m-view-columns" class="h-5 w-5" />
                         </span>
 
-                        <a href="{{ $tableUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Table view">
+                        <a href="{{ $cardUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Card view">
+                            <x-filament::icon icon="heroicon-m-squares-2x2" class="h-5 w-5" />
+                        </a>
+
+                        <a href="{{ $listUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="List view">
                             <x-filament::icon icon="heroicon-m-list-bullet" class="h-5 w-5" />
                         </a>
+                    @elseif ($this->isCardView())
+                        <a href="{{ $kanbanUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Kanban view">
+                            <x-filament::icon icon="heroicon-m-view-columns" class="h-5 w-5" />
+                        </a>
+
+                        <span class="app-surface-raised lead-board-switch-active rounded-lg p-2 shadow-sm" aria-label="Card view active">
+                            <x-filament::icon icon="heroicon-m-squares-2x2" class="h-5 w-5" />
+                        </span>
+
+                        <a href="{{ $listUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="List view">
+                            <x-filament::icon icon="heroicon-m-list-bullet" class="h-5 w-5" />
+                        </a>
+                    @else
+                        <a href="{{ $kanbanUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Kanban view">
+                            <x-filament::icon icon="heroicon-m-view-columns" class="h-5 w-5" />
+                        </a>
+
+                        <a href="{{ $cardUrl }}" class="lead-board-switch-action rounded-lg p-2 transition" aria-label="Card view">
+                            <x-filament::icon icon="heroicon-m-squares-2x2" class="h-5 w-5" />
+                        </a>
+
+                        <span class="app-surface-raised lead-board-switch-active rounded-lg p-2 shadow-sm" aria-label="List view active">
+                            <x-filament::icon icon="heroicon-m-list-bullet" class="h-5 w-5" />
+                        </span>
                     @endif
                 </div>
             </div>
         </div>
 
-        @if ($this->isTableView())
+        @if (! $this->isKanbanView())
             {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE, scopes: $this->getRenderHookScopes()) }}
 
-            {{ $this->table }}
+            @if ($this->isCardView())
+                @include('filament.resources.pages.partials.record-view-toolbar')
+
+                <div hidden aria-hidden="true">
+                    {{ $this->table }}
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                    @foreach ($this->getCardViewItems() as $lead)
+                        <a
+                            wire:key="lead-card-view-{{ $lead->getKey() }}"
+                            href="#"
+                            x-on:click.prevent="$wire.mountAction('editLead', { lead: '{{ $lead->getKey() }}' })"
+                            class="app-surface-raised lead-board-card flex flex-col gap-5 rounded-xl border p-4 transition"
+                        >
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-start gap-3 min-w-0">
+                                    <div class="lead-board-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-base font-semibold uppercase tracking-wide" style="{{ $this->getLeadAvatarStyle($lead) }}">
+                                        {{ $this->getLeadInitials($lead) }}
+                                    </div>
+
+                                    <div class="flex flex-col gap-0.5 pt-0.5">
+                                        <span class="text-sm font-semibold leading-5 text-slate-900 dark:text-slate-100">{{ $lead->name }}</span>
+
+                                        @if ($this->getLeadOrganizationName($lead))
+                                            <span class="text-xs leading-4 text-slate-500 dark:text-slate-400">{{ $this->getLeadOrganizationName($lead) }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-sm font-medium leading-6 text-slate-800 dark:text-slate-100">{{ $lead->title ?: 'Untitled lead' }}</p>
+
+                            <div class="flex flex-wrap gap-1.5">
+                                @foreach ($this->getLeadCardPills($lead) as $pill)
+                                    <div class="app-surface-elevated lead-board-pill inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs font-medium">
+                                        @if ($pill['icon'])
+                                            <x-filament::icon :icon="$pill['icon']" class="h-3.5 w-3.5" />
+                                        @endif
+
+                                        <span>{{ $pill['label'] }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            @else
+                {{ $this->table }}
+            @endif
 
             {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_AFTER, scopes: $this->getRenderHookScopes()) }}
         @else

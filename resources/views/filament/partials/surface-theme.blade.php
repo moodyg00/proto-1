@@ -140,4 +140,156 @@
 	html.dark .lead-board-sortable-drag.sortable-fallback {
 		box-shadow: 0 34px 58px -24px rgba(0, 0, 0, 0.78), 0 24px 34px -24px rgba(0, 0, 0, 0.62) !important;
 	}
+
+	.filament-fullcalendar .fc-toolbar-title {
+		color: var(--app-text);
+		font-size: 1.1rem;
+		font-weight: 700;
+	}
+
+	.filament-fullcalendar .fc-button {
+		background: var(--app-surface-raised);
+		border-color: var(--app-border-soft);
+		color: var(--app-text);
+		box-shadow: none;
+		text-transform: capitalize;
+	}
+
+	.filament-fullcalendar .fc-button-primary:not(:disabled).fc-button-active,
+	.filament-fullcalendar .fc-button-primary:not(:disabled):active {
+		background: #f7b84b;
+		border-color: #f7b84b;
+		color: #111827;
+	}
+
+	.filament-fullcalendar .fc-theme-standard td,
+	.filament-fullcalendar .fc-theme-standard th,
+	.filament-fullcalendar .fc-theme-standard .fc-scrollgrid {
+		border-color: var(--app-border-soft);
+	}
+
+	.filament-fullcalendar .fc-dayGridMonth-view .fc-daygrid-day {
+		height: 8.25rem;
+		vertical-align: top;
+		padding: 0.22rem;
+		background: transparent;
+	}
+
+	.filament-fullcalendar .fc-dayGridMonth-view .fc-daygrid-day-frame {
+		height: 100%;
+		padding: 0.35rem;
+		display: flex;
+		flex-direction: column;
+		border: 1px solid var(--app-border-soft);
+		border-radius: 0.95rem;
+		background: var(--app-surface-raised);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+	}
+
+	.filament-fullcalendar .fc-dayGridMonth-view .fc-daygrid-day-top {
+		justify-content: flex-end;
+	}
+
+	.filament-fullcalendar .fc-dayGridMonth-view .fc-daygrid-day-number {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 999px;
+		color: var(--app-text);
+		font-weight: 700;
+	}
+
+	.filament-fullcalendar .fc-dayGridMonth-view .fc-day-today .fc-daygrid-day-number {
+		background: rgba(247, 184, 75, 0.2);
+	}
+
+	.filament-fullcalendar .fc-dayGridMonth-view .fc-daygrid-day-events {
+		flex: 1 1 auto;
+		margin-top: 0.35rem;
+		overflow: hidden;
+	}
+
+	.filament-fullcalendar .schedule-calendar__month-event-host {
+		margin: 0;
+		border: 0;
+		background: rgba(14, 165, 233, 0.18);
+		color: var(--app-text);
+		border-radius: 999px;
+		overflow: hidden;
+	}
+
+	.filament-fullcalendar .schedule-calendar__month-event-host:hover {
+		background: rgba(14, 165, 233, 0.24);
+	}
+
+	.filament-fullcalendar .schedule-calendar__month-event-host--mobile {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		min-width: 1.75rem;
+		background: transparent;
+	}
+
+	.filament-fullcalendar .schedule-calendar__month-event {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		max-width: 100%;
+		padding: 0.22rem 0.45rem;
+		overflow: hidden;
+		white-space: nowrap;
+	}
+
+	.filament-fullcalendar .schedule-calendar__month-time {
+		flex: 0 0 auto;
+		font-size: 0.7rem;
+		font-weight: 700;
+	}
+
+	.filament-fullcalendar .schedule-calendar__month-label {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		font-size: 0.72rem;
+		font-weight: 700;
+	}
+
+	.filament-fullcalendar .schedule-calendar__dot {
+		display: inline-flex;
+		width: 0.55rem;
+		height: 0.55rem;
+		border-radius: 999px;
+		background: currentColor;
+	}
+
+	@media (max-width: 640px) {
+		.filament-fullcalendar .fc-toolbar {
+			gap: 0.75rem;
+		}
+
+		.filament-fullcalendar .fc-toolbar.fc-header-toolbar {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.filament-fullcalendar .fc-toolbar-chunk {
+			display: flex;
+			justify-content: space-between;
+			gap: 0.5rem;
+			flex-wrap: wrap;
+		}
+
+		.filament-fullcalendar .fc-dayGridMonth-view .fc-daygrid-day {
+			height: 4.9rem;
+			padding: 0.14rem;
+		}
+
+		.filament-fullcalendar .fc-dayGridMonth-view .fc-daygrid-day-frame {
+			padding: 0.2rem;
+			border-radius: 0.7rem;
+		}
+	}
 </style>

@@ -16,11 +16,11 @@ class BillResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
 
-    protected static ?string $navigationGroup = 'Accounting';
+    protected static ?string $navigationGroup = 'Banking';
 
     protected static ?string $navigationLabel = 'Bills';
 
-    protected static ?int $navigationSort = 9;
+    protected static ?int $navigationSort = 5;
 
     public static function form(Form $form): Form
     {
