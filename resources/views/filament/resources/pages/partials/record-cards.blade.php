@@ -23,7 +23,7 @@
     <div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
         @foreach ($cardItems as $record)
             @php
-                $primaryAction = $this->getCardViewPrimaryAction($record);
+                $cardActions = $this->getCardViewActions($record);
             @endphp
 
             <article class="app-surface-panel flex h-full flex-col gap-4 rounded-2xl border p-5 shadow-sm">
@@ -40,25 +40,35 @@
                     @endforeach
                 </dl>
 
-                @if ($primaryAction)
-                    <div class="mt-auto flex items-center justify-end">
-                        @if ($primaryAction['type'] === 'url')
-                            <a
-                                href="{{ $primaryAction['url'] }}"
-                                @if ($primaryAction['new_tab']) target="_blank" rel="noopener noreferrer" @endif
-                                class="inline-flex items-center rounded-xl bg-primary-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary-500"
-                            >
-                                {{ $primaryAction['label'] }}
-                            </a>
-                        @else
-                            <button
-                                type="button"
-                                wire:click="mountTableAction('{{ $primaryAction['name'] }}', '{{ $primaryAction['record'] }}')"
-                                class="inline-flex items-center rounded-xl bg-primary-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary-500"
-                            >
-                                {{ $primaryAction['label'] }}
-                            </button>
-                        @endif
+                @if (count($cardActions))
+                    <div class="mt-auto flex flex-wrap items-center gap-2 pt-2">
+                        @foreach ($cardActions as $action)
+                            @php
+                                $buttonClasses = match ($action['style'] ?? 'secondary') {
+                                    'primary' => 'bg-primary-600 text-white hover:bg-primary-500',
+                                    'danger' => 'bg-rose-600 text-white hover:bg-rose-500',
+                                    default => 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
+                                };
+                            @endphp
+
+                            @if ($action['type'] === 'url')
+                                <a
+                                    href="{{ $action['url'] }}"
+                                    @if ($action['new_tab']) target="_blank" rel="noopener noreferrer" @endif
+                                    class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ $buttonClasses }}"
+                                >
+                                    {{ $action['label'] }}
+                                </a>
+                            @else
+                                <button
+                                    type="button"
+                                    wire:click="mountTableAction('{{ $action['name'] }}', '{{ $action['record'] }}')"
+                                    class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ $buttonClasses }}"
+                                >
+                                    {{ $action['label'] }}
+                                </button>
+                            @endif
+                        @endforeach
                     </div>
                 @endif
             </article>

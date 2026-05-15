@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\CrmSettingResource\Pages;
+namespace App\Filament\Resources\AvailabilityResource\Pages;
 
+use App\Filament\Resources\AvailabilityResource;
 use App\Filament\Resources\Pages\AppLabManageRecords;
-use App\Filament\Resources\CrmSettingResource;
 use Filament\Actions;
 
-class ManageCrmSettings extends AppLabManageRecords
+class ManageAvailabilities extends AppLabManageRecords
 {
-    protected static string $resource = CrmSettingResource::class;
+    protected static string $resource = AvailabilityResource::class;
 
     protected function getHeaderActions(): array
     {

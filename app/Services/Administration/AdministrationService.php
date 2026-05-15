@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Models\Task;
 use App\Models\User;
 use App\Repositories\Administration\AdministrationRepository;
+use App\Support\BrandSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -132,6 +133,11 @@ class AdministrationService
     {
         $setting = $this->repo->createSetting($data);
         $this->logChange('settings', $setting->id, 'create', $data, 'Setting created');
+
+        if (($setting->module === 'business') && ($setting->key === 'branding')) {
+            BrandSettings::clearCache();
+        }
+
         return $setting;
     }
 
@@ -143,6 +149,11 @@ class AdministrationService
             'before' => $before,
             'after'  => $updated->only(['module', 'key', 'value']),
         ], 'Setting updated');
+
+        if (($updated->module === 'business') && ($updated->key === 'branding')) {
+            BrandSettings::clearCache();
+        }
+
         return $updated;
     }
 

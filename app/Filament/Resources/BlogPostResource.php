@@ -101,6 +101,7 @@ class BlogPostResource extends Resource
                         'archived' => 'Archived',
                     ]),
             ])
+            ->recordUrl(fn (BlogPost $record): string => static::getUrl('edit', ['record' => $record]))
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -116,6 +117,7 @@ class BlogPostResource extends Resource
     {
         return [
             'index' => Pages\ManageBlogPosts::route('/'),
+            'edit' => Pages\EditBlogPost::route('/{record}/edit'),
         ];
     }
 }

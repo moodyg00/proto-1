@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
-class Company extends Model
+class Availability extends Model
 {
     use HasUuids;
 
@@ -14,11 +14,11 @@ class Company extends Model
     protected function casts(): array
     {
         return [
-            'settings' => 'array',
-            'invoice_template' => 'array',
-            'address' => 'array',
-            'tax_settings' => 'array',
-            'is_active' => 'boolean',
+            'starts_at' => 'datetime',
+            'ends_at' => 'datetime',
+            'is_available' => 'boolean',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
     }
 }

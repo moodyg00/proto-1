@@ -85,10 +85,12 @@
 
                 <div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
                     @foreach ($this->getCardViewItems() as $job)
-                        <a
+                        @php
+                            $cardActions = $this->getCardViewActions($job);
+                        @endphp
+
+                        <article
                             wire:key="job-card-view-{{ $job->getKey() }}"
-                            href="#"
-                            x-on:click.prevent="$wire.mountAction('editWorkOrder', { job: '{{ $job->getKey() }}' })"
                             class="app-surface-raised lead-board-card flex flex-col gap-5 rounded-xl border p-4 transition"
                         >
                             <div class="flex items-start justify-between gap-3">
@@ -116,7 +118,37 @@
                                 @endforeach
                             </div>
 
-                            <div class="flex items-center justify-end">
+                            <div class="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    @foreach ($cardActions as $action)
+                                        @php
+                                            $buttonClasses = match ($action['style'] ?? 'secondary') {
+                                                'primary' => 'bg-primary-600 text-white hover:bg-primary-500',
+                                                'danger' => 'bg-rose-600 text-white hover:bg-rose-500',
+                                                default => 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
+                                            };
+                                        @endphp
+
+                                        @if ($action['type'] === 'url')
+                                            <a
+                                                href="{{ $action['url'] }}"
+                                                @if ($action['new_tab']) target="_blank" rel="noopener noreferrer" @endif
+                                                class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ $buttonClasses }}"
+                                            >
+                                                {{ $action['label'] }}
+                                            </a>
+                                        @else
+                                            <button
+                                                type="button"
+                                                wire:click.stop="mountTableAction('{{ $action['name'] }}', '{{ $action['record'] }}')"
+                                                class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ $buttonClasses }}"
+                                            >
+                                                {{ $action['label'] }}
+                                            </button>
+                                        @endif
+                                    @endforeach
+                                </div>
+
                                 {{ ($this->editBookingAction)(['job' => $job->getKey()])
                                     ->label($job->booking()->exists() ? 'Edit Booking' : 'Create Booking')
                                     ->size(
@@ -124,7 +156,7 @@
                                     )
                                     ->color('gray') }}
                             </div>
-                        </a>
+                        </article>
                     @endforeach
                 </div>
             @else
@@ -163,7 +195,6 @@
                                 chosenClass: 'lead-board-sortable-chosen',
                                 dragClass: 'lead-board-sortable-drag',
                                 onStart: (event) => {
-                                    this.suppressNextClick = true
                                     this.draggedJobId = event.item?.dataset.jobCard ?? null
                                 },
                                 onMove: (event) => {
@@ -190,14 +221,6 @@
                         this.sortables.forEach((sortable) => sortable.destroy())
                         this.sortables = []
                     },
-                    handleCardActivate(jobId) {
-                        if (this.suppressNextClick) {
-                            this.suppressNextClick = false
-                            return
-                        }
-
-                        $wire.mountAction('editWorkOrder', { job: jobId })
-                    },
                 }"
                 x-init="$nextTick(() => initSortables())"
                 class="flex gap-3 overflow-x-auto pb-2"
@@ -217,12 +240,14 @@
 
                         <div data-job-list class="flex max-h-[calc(100vh-21rem)] min-h-[26rem] flex-col gap-3 overflow-y-auto p-3">
                             @forelse ($column['jobs'] as $job)
-                                <a
+                                @php
+                                    $cardActions = $this->getCardViewActions($job);
+                                @endphp
+
+                                <article
                                     wire:key="job-board-card-{{ $job->getKey() }}"
-                                    href="#"
                                     data-draggable
                                     data-job-card="{{ $job->getKey() }}"
-                                    x-on:click.prevent="handleCardActivate('{{ $job->getKey() }}')"
                                     class="app-surface-raised lead-board-card lead-item flex cursor-move flex-col gap-5 rounded-xl border p-4 transition"
                                 >
                                     <div class="flex items-start justify-between gap-3">
@@ -250,7 +275,39 @@
                                         @endforeach
                                     </div>
 
-                                    <div class="flex items-center justify-end">
+                                    <div class="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            @foreach ($cardActions as $action)
+                                                @php
+                                                    $buttonClasses = match ($action['style'] ?? 'secondary') {
+                                                        'primary' => 'bg-primary-600 text-white hover:bg-primary-500',
+                                                        'danger' => 'bg-rose-600 text-white hover:bg-rose-500',
+                                                        default => 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
+                                                    };
+                                                @endphp
+
+                                                @if ($action['type'] === 'url')
+                                                    <a
+                                                        href="{{ $action['url'] }}"
+                                                        @if ($action['new_tab']) target="_blank" rel="noopener noreferrer" @endif
+                                                        x-on:click.stop
+                                                        class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ $buttonClasses }}"
+                                                    >
+                                                        {{ $action['label'] }}
+                                                    </a>
+                                                @else
+                                                    <button
+                                                        type="button"
+                                                        wire:click.stop="mountTableAction('{{ $action['name'] }}', '{{ $action['record'] }}')"
+                                                        x-on:click.stop
+                                                        class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ $buttonClasses }}"
+                                                    >
+                                                        {{ $action['label'] }}
+                                                    </button>
+                                                @endif
+                                            @endforeach
+                                        </div>
+
                                         {{ ($this->editBookingAction)(['job' => $job->getKey()])
                                             ->label($job->booking()->exists() ? 'Edit Booking' : 'Create Booking')
                                             ->size(
@@ -258,7 +315,7 @@
                                             )
                                             ->color('gray') }}
                                     </div>
-                                </a>
+                                </article>
                             @empty
                                 <div class="app-surface-raised lead-board-card flex h-full min-h-[18rem] flex-col items-center justify-center gap-3 rounded-xl border border-dashed p-5 text-center">
                                     <div class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-300">

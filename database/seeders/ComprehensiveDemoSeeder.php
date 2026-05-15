@@ -20,7 +20,6 @@ class ComprehensiveDemoSeeder extends Seeder
         $users = $this->seedUsers();
         $this->seedPasswordReset($users);
         $settings = $this->seedSettings($users);
-        $company = $this->seedCompany($users);
         $organizations = $this->seedOrganizations($users);
         $contacts = $this->seedContacts($users, $organizations);
         $services = $this->seedServices($users);
@@ -41,7 +40,7 @@ class ComprehensiveDemoSeeder extends Seeder
         $marketing = $this->seedMarketing($users, $content['images']);
         $integrations = $this->seedIntegrations($users);
         $tasks = $this->seedTasksAndAi($users, $leads, $opportunities, $contacts, $organizations, $tickets, $workOrders);
-        $this->seedAdministration($users, $inventory, $products, $tasks, $settings, $company, $organizations, $contacts, $services, $workOrders, $accounting['invoices'], $integrations);
+        $this->seedAdministration($users, $inventory, $products, $tasks, $settings, $organizations, $contacts, $services, $workOrders, $accounting['invoices'], $integrations);
     }
 
     private function seedUsers(): array
@@ -141,18 +140,17 @@ class ComprehensiveDemoSeeder extends Seeder
         }
 
         $admin = $users['admin@admin.com'];
-
         $records = [
-            ['module' => 'crm', 'key' => 'mail.from_address', 'value' => json_encode('hello@applab.test'), 'description' => 'Default CRM sender address.'],
-            ['module' => 'crm', 'key' => 'mail.from_name', 'value' => json_encode('APP-LAB CRM'), 'description' => 'Default CRM sender name.'],
             ['module' => 'accounting', 'key' => 'default_currency', 'value' => json_encode('USD'), 'description' => 'Base accounting currency.'],
+            ['module' => 'crm', 'key' => 'mail.from_address', 'value' => json_encode('hello@applab.test'), 'description' => 'Default CRM sender address.'],
+            ['module' => 'crm', 'key' => 'mail.from_name', 'value' => json_encode('Moody Home Services, LLC'), 'description' => 'Default CRM sender name.'],
             ['module' => 'operations', 'key' => 'schedule_window_days', 'value' => json_encode(21), 'description' => 'Default planning horizon for schedule views.'],
         ];
 
         $settings = [];
 
         foreach ($records as $record) {
-            $settings[$record['key']] = $this->ensureRecord('settings', [
+            $settings[$record['module'].'.'.$record['key']] = $this->ensureRecord('settings', [
                 'module' => $record['module'],
                 'key' => $record['key'],
             ], [
@@ -164,27 +162,6 @@ class ComprehensiveDemoSeeder extends Seeder
         }
 
         return $settings;
-    }
-
-    private function seedCompany(array $users): array
-    {
-        if (! Schema::hasTable('companies') || $users === []) {
-            return [];
-        }
-
-        $admin = $users['admin@admin.com'];
-
-        return $this->ensureRecord('companies', ['name' => 'APP-LAB Demo Co'], [
-            'name' => 'APP-LAB Demo Co',
-            'logo_url' => 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80',
-            'settings' => json_encode(['timezone' => 'America/Chicago', 'locale' => 'en']),
-            'invoice_template' => json_encode(['accent' => '#0f766e', 'terms' => 'Net 15']),
-            'address' => json_encode(['street' => '500 Commerce Ave', 'city' => 'Austin', 'state' => 'TX', 'postal_code' => '78702']),
-            'tax_settings' => json_encode(['filing_state' => 'TX', 'ein' => '12-3456789']),
-            'is_active' => true,
-            'created_by' => $admin['id'],
-            'updated_by' => $admin['id'],
-        ]);
     }
 
     private function seedOrganizations(array $users): array
@@ -1148,7 +1125,7 @@ class ComprehensiveDemoSeeder extends Seeder
         if (Schema::hasTable('tax_settings')) {
             $this->insertIfEmpty('tax_settings', [
                 'id' => (string) Str::uuid(),
-                'company_name' => 'APP-LAB Demo Co',
+                'company_name' => 'Moody Home Services, LLC',
                 'tax_id' => '12-3456789',
                 'address' => json_encode(['street' => '500 Commerce Ave', 'city' => 'Austin', 'state' => 'TX', 'postal_code' => '78702']),
                 'contact_name' => 'Felix Ledger',
@@ -1500,9 +1477,9 @@ class ComprehensiveDemoSeeder extends Seeder
         }
 
         if (Schema::hasTable('social_media_accounts')) {
-            $this->ensureRecord('social_media_accounts', ['account_name' => 'APP-LAB Instagram'], [
+            $this->ensureRecord('social_media_accounts', ['account_name' => 'Moody Home Services, LLC Instagram'], [
                 'platform' => 'instagram',
-                'account_name' => 'APP-LAB Instagram',
+                'account_name' => 'Moody Home Services, LLC Instagram',
                 'username' => '@applabdemo',
                 'account_type' => 'business',
                 'is_active' => true,
@@ -1974,7 +1951,7 @@ class ComprehensiveDemoSeeder extends Seeder
         return $result;
     }
 
-    private function seedAdministration(array $users, array $inventory, array $products, array $tasks, array $settings, array $company, array $organizations, array $contacts, array $services, array $workOrders, array $invoices, array $integrations): void
+    private function seedAdministration(array $users, array $inventory, array $products, array $tasks, array $settings, array $organizations, array $contacts, array $services, array $workOrders, array $invoices, array $integrations): void
     {
         if ($users === []) {
             return;

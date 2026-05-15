@@ -91,24 +91,6 @@ CREATE TABLE settings (
 CREATE INDEX idx_settings_module ON settings(module);
 CREATE INDEX idx_settings_module_key ON settings(module, key);
 
-CREATE TABLE companies (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name varchar(255) NOT NULL,
-    logo_url text,
-    settings jsonb,
-    invoice_template jsonb,
-    address jsonb,
-    tax_settings jsonb,
-    is_active boolean NOT NULL DEFAULT true,
-    created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now(),
-    created_by uuid REFERENCES users(id) ON DELETE SET NULL,
-    updated_by uuid REFERENCES users(id) ON DELETE SET NULL
-);
-
-CREATE INDEX idx_companies_name ON companies(name);
-CREATE INDEX idx_companies_is_active ON companies(is_active);
-
 -- =========================================================
 -- CRM
 -- =========================================================

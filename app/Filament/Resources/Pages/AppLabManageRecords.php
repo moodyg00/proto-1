@@ -220,35 +220,91 @@ abstract class AppLabManageRecords extends ManageRecords
 
     public function getCardViewPrimaryAction(Model $record): ?array
     {
+        return $this->getCardViewEditAction($record) ?? $this->getCardViewViewAction($record);
+    }
+
+    public function getCardViewActions(Model $record): array
+    {
+        return array_values(array_filter([
+            $this->getCardViewViewAction($record),
+            $this->getCardViewEditAction($record),
+            $this->getCardViewDeleteAction($record),
+        ]));
+    }
+
+    public function getCardViewViewAction(Model $record): ?array
+    {
+        if (static::getResource()::hasPage('view')) {
+            return [
+                'type' => 'url',
+                'label' => 'View',
+                'url' => static::getResource()::getUrl('view', ['record' => $record]),
+                'new_tab' => false,
+                'style' => 'secondary',
+            ];
+        }
+
+        if ($action = $this->getTableCardAction('view', $record)) {
+            return [
+                ...$action,
+                'label' => 'View',
+                'style' => 'secondary',
+            ];
+        }
+
         $table = $this->getTable();
 
         if ($url = $table->getRecordUrl($record)) {
             return [
                 'type' => 'url',
-                'label' => 'Edit',
+                'label' => 'View',
                 'url' => $url,
                 'new_tab' => $table->shouldOpenRecordUrlInNewTab($record),
+                'style' => 'secondary',
             ];
         }
 
-        foreach (['edit', 'view'] as $actionName) {
-            $action = $table->getAction($actionName);
-
-            if (! $action) {
-                continue;
-            }
-
-            $action->record($record);
-
-            if ($action->isHidden()) {
-                continue;
-            }
-
+        if ($action = $this->getTableCardAction('edit', $record)) {
             return [
-                'type' => 'table-action',
-                'label' => Str::headline($actionName),
-                'name' => $actionName,
-                'record' => $this->getTableRecordKey($record),
+                ...$action,
+                'label' => 'View',
+                'style' => 'secondary',
+            ];
+        }
+
+        return null;
+    }
+
+    public function getCardViewEditAction(Model $record): ?array
+    {
+        if (static::getResource()::hasPage('edit')) {
+            return [
+                'type' => 'url',
+                'label' => 'Edit',
+                'url' => static::getResource()::getUrl('edit', ['record' => $record]),
+                'new_tab' => false,
+                'style' => 'primary',
+            ];
+        }
+
+        if ($action = $this->getTableCardAction('edit', $record)) {
+            return [
+                ...$action,
+                'label' => 'Edit',
+                'style' => 'primary',
+            ];
+        }
+
+        return null;
+    }
+
+    public function getCardViewDeleteAction(Model $record): ?array
+    {
+        if ($action = $this->getTableCardAction('delete', $record)) {
+            return [
+                ...$action,
+                'label' => 'Delete',
+                'style' => 'danger',
             ];
         }
 
@@ -423,6 +479,27 @@ abstract class AppLabManageRecords extends ManageRecords
     protected function getCardViewFieldLimit(): int
     {
         return 6;
+    }
+
+    protected function getTableCardAction(string $actionName, Model $record): ?array
+    {
+        $action = $this->getTable()->getAction($actionName);
+
+        if (! $action) {
+            return null;
+        }
+
+        $action->record($record);
+
+        if ($action->isHidden()) {
+            return null;
+        }
+
+        return [
+            'type' => 'table-action',
+            'name' => $actionName,
+            'record' => $this->getTableRecordKey($record),
+        ];
     }
 
     protected function getPersistentViewQueryParameters(): array

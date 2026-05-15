@@ -14,7 +14,10 @@ class ManageJournalEntries extends AppLabManageRecords
     {
         return [
             ...parent::getHeaderActions(),
-            Actions\CreateAction::make(),
+            Actions\Action::make('newJournalEntry')
+                ->label('New journal entry')
+                ->icon('heroicon-m-plus')
+                ->url(JournalEntryResource::getUrl('create')),
         ];
     }
 }

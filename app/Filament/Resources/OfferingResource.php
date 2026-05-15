@@ -14,6 +14,8 @@ class OfferingResource extends Resource
 {
     protected static ?string $model = Service::class;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
 
     protected static ?string $navigationGroup = 'Accounting';

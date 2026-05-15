@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\Job;
 use Filament\Forms;
@@ -45,10 +46,22 @@ class SchedulingCalendarWidget extends FullCalendarWidget
 
     public function fetchEvents(array $info): array
     {
-        return Booking::query()
+        $bookingType = request()->query('booking_type');
+        $availabilityScope = request()->query('availability_scope', 'all');
+
+        $bookingEvents = Booking::query()
             ->with('workOrder')
             ->whereDate('booking_date', '>=', Carbon::parse($info['start'])->toDateString())
             ->whereDate('booking_date', '<=', Carbon::parse($info['end'])->toDateString())
+            ->when(filled($bookingType), function ($query) use ($bookingType) {
+                $query->whereHas('workOrder', function ($workOrderQuery) use ($bookingType) {
+                    $workOrderQuery->where(function ($nestedQuery) use ($bookingType) {
+                        $nestedQuery
+                            ->where('service_id', $bookingType)
+                            ->orWhere('service_name', $bookingType);
+                    });
+                });
+            })
             ->orderBy('booking_date')
             ->orderBy('start_time')
             ->get()
@@ -80,6 +93,35 @@ class SchedulingCalendarWidget extends FullCalendarWidget
             })
             ->values()
             ->all();
+
+        $availabilityEvents = Availability::query()
+            ->where('is_available', true)
+            ->where('starts_at', '<=', Carbon::parse($info['end'])->endOfDay())
+            ->where('ends_at', '>=', Carbon::parse($info['start'])->startOfDay())
+            ->when($availabilityScope !== 'all', fn ($query) => $query->where('scope', $availabilityScope))
+            ->orderBy('starts_at')
+            ->get()
+            ->map(function (Availability $availability): array {
+                $color = match ($availability->scope) {
+                    'admin' => '#bae6fd',
+                    'public' => '#bbf7d0',
+                    default => '#ddd6fe',
+                };
+
+                return [
+                    'id' => 'availability-' . $availability->getKey(),
+                    'title' => $availability->label,
+                    'start' => $availability->starts_at->format('Y-m-d\TH:i:s'),
+                    'end' => $availability->ends_at->format('Y-m-d\TH:i:s'),
+                    'display' => 'background',
+                    'backgroundColor' => $color,
+                    'borderColor' => $color,
+                ];
+            })
+            ->values()
+            ->all();
+
+        return array_merge($availabilityEvents, $bookingEvents);
     }
 
     public function getFormSchema(): array

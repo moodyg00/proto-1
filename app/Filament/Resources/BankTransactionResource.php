@@ -6,12 +6,17 @@ use App\Filament\Resources\BankTransactionResource\Pages;
 use App\Models\BankAccount;
 use App\Models\BankCard;
 use App\Models\BankTransaction;
+use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use Filament\Forms;
+use Filament\Forms\Get;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class BankTransactionResource extends Resource
 {
@@ -103,6 +108,7 @@ class BankTransactionResource extends Resource
                 Tables\Columns\TextColumn::make('transaction_type')->badge()->sortable(),
                 Tables\Columns\TextColumn::make('status')->badge()->sortable(),
                 Tables\Columns\TextColumn::make('amount')->money('USD')->sortable(),
+                Tables\Columns\TextColumn::make('journalEntry.entry_number')->label('Journal Entry')->toggleable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('bank_account_id')
@@ -126,6 +132,113 @@ class BankTransactionResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('linkJournalEntry')
+                    ->label(fn (BankTransaction $record): string => $record->journal_entry_id ? 'Update Journal Link' : 'Link Journal Entry')
+                    ->icon('heroicon-o-link')
+                    ->color('primary')
+                    ->fillForm(fn (BankTransaction $record): array => [
+                        'link_mode' => $record->journal_entry_id ? 'existing' : 'new',
+                        'existing_journal_entry_id' => $record->journal_entry_id,
+                        'memo' => $record->description,
+                    ])
+                    ->form([
+                        Forms\Components\Radio::make('link_mode')
+                            ->options([
+                                'existing' => 'Link an existing journal entry',
+                                'new' => 'Create a new journal entry',
+                            ])
+                            ->default('new')
+                            ->inline()
+                            ->live()
+                            ->required(),
+                        Forms\Components\Select::make('existing_journal_entry_id')
+                            ->label('Existing journal entry')
+                            ->options(fn (): array => JournalEntry::query()->orderByDesc('entry_date')->get()
+                                ->mapWithKeys(fn (JournalEntry $entry): array => [
+                                    $entry->getKey() => $entry->entry_number . ' - ' . ($entry->description ?: 'No description'),
+                                ])->all())
+                            ->searchable()
+                            ->preload()
+                            ->visible(fn (Get $get): bool => $get('link_mode') === 'existing')
+                            ->required(fn (Get $get): bool => $get('link_mode') === 'existing'),
+                        Forms\Components\Select::make('bank_account_chart_id')
+                            ->label('Bank account GL account')
+                            ->options(static::getChartOfAccountOptions())
+                            ->searchable()
+                            ->preload()
+                            ->visible(fn (Get $get): bool => $get('link_mode') === 'new')
+                            ->required(fn (Get $get): bool => $get('link_mode') === 'new'),
+                        Forms\Components\Select::make('offset_account_id')
+                            ->label('Offset GL account')
+                            ->options(static::getChartOfAccountOptions())
+                            ->searchable()
+                            ->preload()
+                            ->visible(fn (Get $get): bool => $get('link_mode') === 'new')
+                            ->required(fn (Get $get): bool => $get('link_mode') === 'new'),
+                        Forms\Components\Textarea::make('memo')
+                            ->rows(3)
+                            ->columnSpanFull(),
+                    ])
+                    ->action(function (BankTransaction $record, array $data): void {
+                        if ($data['link_mode'] === 'existing') {
+                            $record->forceFill([
+                                'journal_entry_id' => $data['existing_journal_entry_id'],
+                                'status' => 'categorized',
+                                'updated_by' => Auth::id(),
+                            ])->save();
+
+                            Notification::make()
+                                ->title('Journal entry linked')
+                                ->success()
+                                ->send();
+
+                            return;
+                        }
+
+                        $journalEntry = JournalEntry::query()->create([
+                            'entry_number' => 'JE-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4)),
+                            'description' => $data['memo'] ?: ($record->description ?: 'Bank transaction journal entry'),
+                            'entry_date' => $record->transaction_date,
+                            'total_debits' => abs((float) $record->amount),
+                            'total_credits' => abs((float) $record->amount),
+                            'source_module' => 'banking',
+                            'created_by' => Auth::id(),
+                            'updated_by' => Auth::id(),
+                        ]);
+
+                        $isBankDebit = in_array($record->transaction_type, ['deposit', 'transfer_in', 'interest'], true);
+                        $amount = abs((float) $record->amount);
+
+                        $journalEntry->lines()->createMany([
+                            [
+                                'account_id' => $data['bank_account_chart_id'],
+                                'description' => 'Bank side - ' . ($record->reference ?: $record->transaction_type),
+                                'debit' => $isBankDebit ? $amount : 0,
+                                'credit' => $isBankDebit ? 0 : $amount,
+                                'created_by' => Auth::id(),
+                                'updated_by' => Auth::id(),
+                            ],
+                            [
+                                'account_id' => $data['offset_account_id'],
+                                'description' => 'Offset - ' . ($record->reference ?: $record->transaction_type),
+                                'debit' => $isBankDebit ? 0 : $amount,
+                                'credit' => $isBankDebit ? $amount : 0,
+                                'created_by' => Auth::id(),
+                                'updated_by' => Auth::id(),
+                            ],
+                        ]);
+
+                        $record->forceFill([
+                            'journal_entry_id' => $journalEntry->getKey(),
+                            'status' => 'categorized',
+                            'updated_by' => Auth::id(),
+                        ])->save();
+
+                        Notification::make()
+                            ->title('Journal entry created and linked')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -141,5 +254,16 @@ class BankTransactionResource extends Resource
         return [
             'index' => Pages\ManageBankTransactions::route('/'),
         ];
+    }
+
+    protected static function getChartOfAccountOptions(): array
+    {
+        return ChartOfAccount::query()
+            ->orderBy('code')
+            ->get()
+            ->mapWithKeys(fn (ChartOfAccount $account): array => [
+                $account->getKey() => trim($account->code . ' - ' . $account->name),
+            ])
+            ->all();
     }
 }

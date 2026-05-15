@@ -211,10 +211,12 @@
 
                 <div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
                     @foreach ($this->getCardViewItems() as $lead)
-                        <a
+                        @php
+                            $cardActions = $this->getCardViewActions($lead);
+                        @endphp
+
+                        <article
                             wire:key="lead-card-view-{{ $lead->getKey() }}"
-                            href="#"
-                            x-on:click.prevent="$wire.mountAction('editLead', { lead: '{{ $lead->getKey() }}' })"
                             class="app-surface-raised lead-board-card flex flex-col gap-5 rounded-xl border p-4 transition"
                         >
                             <div class="flex items-start gap-3">
@@ -246,7 +248,39 @@
                                     </div>
                                 @endforeach
                             </div>
-                        </a>
+
+                            @if (count($cardActions))
+                                <div class="mt-auto flex flex-wrap items-center gap-2 pt-1">
+                                    @foreach ($cardActions as $action)
+                                        @php
+                                            $buttonClasses = match ($action['style'] ?? 'secondary') {
+                                                'primary' => 'bg-primary-600 text-white hover:bg-primary-500',
+                                                'danger' => 'bg-rose-600 text-white hover:bg-rose-500',
+                                                default => 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
+                                            };
+                                        @endphp
+
+                                        @if ($action['type'] === 'url')
+                                            <a
+                                                href="{{ $action['url'] }}"
+                                                @if ($action['new_tab']) target="_blank" rel="noopener noreferrer" @endif
+                                                class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ $buttonClasses }}"
+                                            >
+                                                {{ $action['label'] }}
+                                            </a>
+                                        @else
+                                            <button
+                                                type="button"
+                                                wire:click.stop="mountTableAction('{{ $action['name'] }}', '{{ $action['record'] }}')"
+                                                class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ $buttonClasses }}"
+                                            >
+                                                {{ $action['label'] }}
+                                            </button>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
+                        </article>
                     @endforeach
                 </div>
             @else
@@ -334,14 +368,6 @@
                         $wire.requestLeadStatusChange(this.draggedLeadId, status)
                         this.dragEnd()
                     },
-                    handleCardActivate(leadId) {
-                        if (this.suppressNextClick) {
-                            this.suppressNextClick = false
-                            return
-                        }
-
-                        $wire.mountAction('editLead', { lead: leadId })
-                    },
                 }"
                 x-init="$nextTick(() => initSortables())"
                 class="flex gap-3 overflow-x-auto pb-2"
@@ -373,12 +399,14 @@
 
                         <div data-lead-list class="flex max-h-[calc(100vh-21rem)] min-h-[26rem] flex-col gap-3 overflow-y-auto p-3">
                             @forelse ($column['leads'] as $lead)
-                                <a
+                                @php
+                                    $cardActions = $this->getCardViewActions($lead);
+                                @endphp
+
+                                <article
                                     wire:key="lead-board-card-{{ $lead->getKey() }}"
-                                    href="#"
                                     data-draggable
                                     data-lead-card="{{ $lead->getKey() }}"
-                                    x-on:click.prevent="handleCardActivate('{{ $lead->getKey() }}')"
                                     class="app-surface-raised lead-board-card lead-item flex cursor-move flex-col gap-5 rounded-xl border p-4 transition"
                                 >
                                     <div class="flex items-start gap-3">
@@ -410,7 +438,41 @@
                                             </div>
                                         @endforeach
                                     </div>
-                                </a>
+
+                                    @if (count($cardActions))
+                                        <div class="mt-auto flex flex-wrap items-center gap-2 pt-1">
+                                            @foreach ($cardActions as $action)
+                                                @php
+                                                    $buttonClasses = match ($action['style'] ?? 'secondary') {
+                                                        'primary' => 'bg-primary-600 text-white hover:bg-primary-500',
+                                                        'danger' => 'bg-rose-600 text-white hover:bg-rose-500',
+                                                        default => 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
+                                                    };
+                                                @endphp
+
+                                                @if ($action['type'] === 'url')
+                                                    <a
+                                                        href="{{ $action['url'] }}"
+                                                        @if ($action['new_tab']) target="_blank" rel="noopener noreferrer" @endif
+                                                        x-on:click.stop
+                                                        class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ $buttonClasses }}"
+                                                    >
+                                                        {{ $action['label'] }}
+                                                    </a>
+                                                @else
+                                                    <button
+                                                        type="button"
+                                                        wire:click.stop="mountTableAction('{{ $action['name'] }}', '{{ $action['record'] }}')"
+                                                        x-on:click.stop
+                                                        class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ $buttonClasses }}"
+                                                    >
+                                                        {{ $action['label'] }}
+                                                    </button>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </article>
                             @empty
                                 <div class="app-surface-raised lead-board-card flex h-full min-h-[18rem] flex-col items-center justify-center gap-3 rounded-xl border border-dashed p-5 text-center">
                                     <div class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-300">

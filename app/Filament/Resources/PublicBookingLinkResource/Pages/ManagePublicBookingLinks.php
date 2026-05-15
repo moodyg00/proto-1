@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\CompanyResource\Pages;
+namespace App\Filament\Resources\PublicBookingLinkResource\Pages;
 
 use App\Filament\Resources\Pages\AppLabManageRecords;
-use App\Filament\Resources\CompanyResource;
+use App\Filament\Resources\PublicBookingLinkResource;
 use Filament\Actions;
 
-class ManageCompanies extends AppLabManageRecords
+class ManagePublicBookingLinks extends AppLabManageRecords
 {
-    protected static string $resource = CompanyResource::class;
+    protected static string $resource = PublicBookingLinkResource::class;
 
     protected function getHeaderActions(): array
     {
